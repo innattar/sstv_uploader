@@ -41,19 +41,24 @@ def new_pics():
     log.debug("After filtering, candidate upload list is: {}".format(candidates))
     return candidates
 
-def upload(files):
-    curl_cli = 'curl -X POST --data \'{{"channel":"{}","text":"New batch of images"}}\' -H \'Content-type: application/json\'  -H "Authorization: Bearer {}" https://slack.com/api/chat.postMessage'.format(CHANNEL, TOKEN)
-    log.debug(curl_cli)
-    result = subprocess.run(shlex.split(curl_cli), capture_output=True)
-    res = json.loads(result.stdout.decode('utf-8'))
-    log.debug(res)
-    if result.returncode != 0 or res['ok'] == False:
-        log.error("Unable to make new thread.  Will retry transfer later")
-        return
-    thread_ts = res['ts']
+def upload(files, to_thread=False):
+    if to_thread:
+        curl_cli = 'curl -X POST --data \'{{"channel":"{}","text":"New batch of images"}}\' -H \'Content-type: application/json\'  -H "Authorization: Bearer {}" https://slack.com/api/chat.postMessage'.format(CHANNEL, TOKEN)
+        log.debug(curl_cli)
+        result = subprocess.run(shlex.split(curl_cli), capture_output=True)
+        res = json.loads(result.stdout.decode('utf-8'))
+        log.debug(res)
+        if result.returncode != 0 or res['ok'] == False:
+            log.error("Unable to make new thread.  Will retry transfer later")
+            return
+        thread_ts = res['ts']
     for f in files:
         f = os.path.join(SSTV_RX_DIR, f)
-        cmd = f'curl -F file=@{f} -F thread_ts={thread_ts} -F channels={CHANNEL} -H "Authorization: Bearer {TOKEN}" https://slack.com/api/files.upload'
+        if to_thread:
+            cmd = f'curl -F file=@{f} -F thread_ts={thread_ts} -F channels={CHANNEL} -H "Authorization: Bearer {TOKEN}" https://slack.com/api/files.upload'
+        else:
+            cmd = f'curl -F file=@{f} -F channels={CHANNEL} -H "Authorization: Bearer {TOKEN}" https://slack.com/api/files.upload'
+
         log.debug(f"Executing: {cmd}")
         args = shlex.split(cmd)
         result = subprocess.run(args, capture_output=True)
