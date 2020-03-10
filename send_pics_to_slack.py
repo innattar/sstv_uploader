@@ -66,7 +66,7 @@ def upload(files, to_thread=False):
             log.error("Unable to upload image")
         mark_uploaded(f)
 
-def poll(interval=60, upload_threshold=5, timeout_upload_period_s = 3600.0):
+def poll(interval=60, upload_threshold=1, timeout_upload_period_s = 3600.0):
     last_upload = time.monotonic()
     while True:
         time.sleep(interval)
